@@ -129,12 +129,10 @@ pool_info * pool_init(size_t size){
 int pool_destroy(pool_info * pool){
 	int ret = 0;
 
-	while(pool->current != NULL){
-		if(pool_free_block(pool) != 0){
-			fprintf(stderr, "Error freeing pool blocks\n");
-			ret = 1;
-			break;
-		}
+	for(pool_block * pb = pool->first; pb != NULL; ){
+		pool_block * next = pb->next;
+		free(pb);
+		pb = next;
 	}
 
 	free(pool);
