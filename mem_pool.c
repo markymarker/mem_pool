@@ -4,6 +4,10 @@
 
 #include "mem_pool.h"
 
+#include <stdio.h>
+#include <stdlib.h>
+
+
 // The approximate byte count to shoot for when determining pool block size
 #define TARGET_BLOCK_SIZE 2048
 
@@ -32,7 +36,7 @@ pool_block * pool_add_block(pool_info * pool){
 	pb->pool_size = pool->obj_size * pool->obj_count;
 	pb->index = 0;
 
-	pb->pool = (byte *)malloc(pb->pool_size);
+	pb->pool = (char *)malloc(pb->pool_size);
 	if(pb->pool == NULL){
 		fprintf(stderr, "Unable to allocate pool of (%lu) bytes!", pb->pool_size);
 		// TODO: Print error info
@@ -42,7 +46,7 @@ pool_block * pool_add_block(pool_info * pool){
 
 	// Update pool
 
-	pool->current->next = pb;
+	if(pool->current != NULL) pool->current->next = pb;
 	pool->current = pb;
 	++pool->block_count;
 
@@ -58,7 +62,7 @@ pool_block * pool_add_block(pool_info * pool){
  * @return Zero on success, any other value indicates failure
  */
 int pool_free_block(pool_info * pool){
-	pool_info * to_free = pool->current;
+	pool_block * to_free = pool->current;
 	if(to_free == NULL) return 0;
 
 	// Normally, the index of the block should be rewound, indicating the data
@@ -70,6 +74,14 @@ int pool_free_block(pool_info * pool){
 
 	pool->current = to_free->prev;
 	--pool->block_count;
+
+	// Remove soon-to-be-dangling pointer from new current block.
+	// If the block removed was the pool's first, update pool info accordingly.
+	if(pool->current != NULL){
+		pool->current->next = NULL;
+	} else {
+		pool->first = NULL;
+	}
 
 	free(to_free->pool);
 	free(to_free);
@@ -83,7 +95,7 @@ int pool_free_block(pool_info * pool){
  * @param obj_size The size of the objects to be stored
  */
 size_t figure_block_size(size_t obj_size){
-	if(size >= (TARGET_BLOCK_SIZE / 2)) return 2;
+	if(obj_size >= (TARGET_BLOCK_SIZE / 2)) return 2;
 	return TARGET_BLOCK_SIZE / obj_size;
 }
 
@@ -115,6 +127,34 @@ pool_info * pool_init(size_t size){
 /* Implementation of pool_destroy from header file.
  */
 int pool_destroy(pool_info * pool){
+	int ret = 0;
+
+	while(pool->current != NULL){
+		if(pool_free_block(pool) != 0){
+			fprintf(stderr, "Error freeing pool blocks\n");
+			ret = 1;
+			break;
+		}
+	}
+
+	free(pool);
+
+	return ret;
+}
+
+
+/* Implementation of push_bytes from header file.
+ * TODO
+ */
+size_t push_bytes(pool_info * pool, void * data, size_t bytes){
 	return 0;
+}
+
+
+/* Implementation of pop_bytes from header file.
+ * TODO
+ */
+char * pop_bytes(pool_info * pool, size_t bytes){
+	return NULL;
 }
 

@@ -2,6 +2,11 @@
 // 2021-04-22
 // vim: noet ts=4 sw=4 sts=0
 
+#ifndef MEM_POOL_LOADED
+#define MEM_POOL_LOADED 1
+
+#include <stdlib.h>
+
 
 /* pool_block structure
  *
@@ -17,7 +22,7 @@ typedef struct pool_block_s {
 	size_t                pool_size;
 	size_t                index;
 
-	byte                * pool;
+	char                * pool;
 } pool_block;
 
 
@@ -45,6 +50,8 @@ typedef struct pool_info_s {
 pool_info * pool_init(size_t size);
 
 /* Tear down and deallocate a memory pool.
+ * After this, the caller's pool_info pointer will no longer be valid. The
+ * caller is advised to avoid attempting to use it any further.
  *
  * @param pool The pool to destroy
  * @return Zero on success, any other value indicates failure
@@ -68,7 +75,10 @@ size_t push_bytes(pool_info * pool, void * data, size_t bytes);
  *
  * @param pool The descriptor for the memory pool to operate on
  * @param bytes The amount of bytes to pop from the pool
- * @return An array containing the popped data
+ * @return An array containing the popped data, or NULL on failure
  */
-byte[] pop_bytes(pool_info * pool, size_t bytes);
+char * pop_bytes(pool_info * pool, size_t bytes);
+
+
+#endif
 
