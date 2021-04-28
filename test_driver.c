@@ -3,14 +3,17 @@
 // vim: noet ts=4 sw=4 sts=0
 
 #include <stdio.h>
-#include <stdlib.h>
+#include <stdint.h>
 
 #include "mem_pool.h"
 
+// Struct includes a mix of things to also look at packing and alignment when
+// inspecting the pool. You know, for science and stuff.
 struct test_s {
-  int a;
-  int b;
-  char c;
+  uint64_t a;
+  uint32_t b;
+  unsigned char c;
+  uint16_t d;
 };
 
 const size_t test_s_size = sizeof(struct test_s);
@@ -27,13 +30,25 @@ int main(int argl, char ** argv){
 	}
 	printf("Initialized\n");
 
-	struct test_s data1 = { 4, 5, 'z' };
+	size_t dsize = 4 * test_s_size;
+	struct test_s datas[] = {
+		{ 0x1111222233334444, 0xAAAABBBB, 0xCC, 0xDD},
+		{ -1, -2, 0x66, -1 },
+		{ 4, 5, 'a', 'z' },
+		{ -1, -1, -1, -1 },
+	};
 
-	temps = push_bytes(pool, &data1, test_s_size);
+	temps = push_bytes(pool, datas, dsize);
 	printf("Pushed data\n");
-	if(temps != test_s_size){
-		printf("Data pushed not equal: e(%lu) r(%lu)\n", test_s_size, temps);
+	if(temps != dsize){
+		printf("Data pushed not equal: e(%lu) r(%lu)\n", dsize, temps);
 	}
+
+	const char * delim = "\n\n\0\0\0\0\0\0\0\0\n\n";
+	printf("Dump pool::");
+	fwrite(delim, 1, 12, stdout);
+	fwrite(pool->current->pool, 1, pool->current->pool_size, stdout);
+	fwrite(delim, 1, 12, stdout);
 
 	printf(pool_destroy(pool) ? "Error on destroying\n" : "Destroyed\n");
 }

@@ -14,6 +14,11 @@
  * pool. These blocks can be chained to increase the size of the pool. This
  * structure contains the links to its neighbors (if any) along with other
  * info necessary for a block to be operated on independently.
+ *
+ * Note that (pool + index) points to the next free space. This means that when
+ * the pool is full, this will point to an invalid memory address. With proper
+ * use of the block, this should not present an issue, but care should be paid.
+ * In a full pool, the index should equal the pool_size.
  */
 typedef struct pool_block_s {
 	struct pool_block_s * prev;
@@ -71,13 +76,16 @@ int pool_destroy(pool_info * pool);
 size_t push_bytes(pool_info * pool, void * data, size_t bytes);
 
 /* Pop the specified amount of bytes off the given pool starting from the
- * current index in the pool.
+ * current index in the pool. BYOMem -- the given destination should be able to
+ * hold enough for the given byte count. A return that is less than the given
+ * count indicates that an error occurred.
  *
  * @param pool The descriptor for the memory pool to operate on
+ * @param dest The destination memory to store the data into
  * @param bytes The amount of bytes to pop from the pool
- * @return An array containing the popped data, or NULL on failure
+ * @return The number of bytes popped
  */
-char * pop_bytes(pool_info * pool, size_t bytes);
+size_t pop_bytes(pool_info * pool, char * dest, size_t bytes);
 
 
 #endif

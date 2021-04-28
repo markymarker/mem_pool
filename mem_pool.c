@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 // The approximate byte count to shoot for when determining pool block size
@@ -142,17 +143,58 @@ int pool_destroy(pool_info * pool){
 
 
 /* Implementation of push_bytes from header file.
- * TODO
  */
 size_t push_bytes(pool_info * pool, void * data, size_t bytes){
-	return 0;
+	if(bytes == 0) return 0;
+
+	// Attempt to add a block if none are present
+	if(!pool->current && !pool_add_block(pool)) return 0;
+
+	size_t push_total = 0;
+	size_t blocks_count = 1;
+	size_t max_blocks_expect = 1 + (bytes / pool->block_size);
+	pool_block * target = pool->current;
+
+	// Copy as much as we can to the current block, then add a new block and
+	// rinse and repeat until all is copied or we get bored or both.
+	while(push_total < bytes){
+		if(target == NULL) return push_total;
+
+		// Determine how much we have room for
+		size_t push_piece = target->pool_size - target->index;
+		if(push_piece > bytes) push_piece = bytes;
+
+		// Determination will have given 0 if the current block is full, so
+		// boss says add a new one.
+		if(push_piece == 0){
+			target = pool_add_block(pool);
+			++blocks_count;
+			continue;
+		}
+
+		// Finally, the main event
+		memcpy(target->pool + target->index, (char *)data + push_total, push_piece);
+		push_total += push_piece;
+
+		// Sanity check -- keeps the doctor away
+		if(blocks_count > max_blocks_expect){
+			fprintf(stderr,
+				"Blocks exceeded expected for push (%lu) (%lu)\n",
+				blocks_count,
+				max_blocks_expect
+			);
+			break;
+		}
+	}
+
+	return push_total;
 }
 
 
 /* Implementation of pop_bytes from header file.
  * TODO
  */
-char * pop_bytes(pool_info * pool, size_t bytes){
-	return NULL;
+size_t pop_bytes(pool_info * pool, char * dest, size_t bytes){
+	return 0;
 }
 
