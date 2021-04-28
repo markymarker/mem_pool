@@ -18,6 +18,16 @@ struct test_s {
 
 const size_t test_s_size = sizeof(struct test_s);
 
+
+void dump_pool(pool_info * pool){
+	const char * delim = "\n\n\0\0\0\0\0\0\0\0\n\n";
+	printf("Dump pool::");
+	fwrite(delim, 1, 12, stdout);
+	fwrite(pool->current->pool, 1, pool->current->pool_size, stdout);
+	fwrite(delim, 1, 12, stdout);
+}
+
+
 int main(int argl, char ** argv){
 	size_t temps;
 
@@ -44,11 +54,7 @@ int main(int argl, char ** argv){
 		printf("Data pushed not equal: e(%lu) r(%lu)\n", dsize, temps);
 	}
 
-	const char * delim = "\n\n\0\0\0\0\0\0\0\0\n\n";
-	printf("Dump pool::");
-	fwrite(delim, 1, 12, stdout);
-	fwrite(pool->current->pool, 1, pool->current->pool_size, stdout);
-	fwrite(delim, 1, 12, stdout);
+	dump_pool(pool);
 
 	printf(pool_destroy(pool) ? "Error on destroying\n" : "Destroyed\n");
 }
