@@ -132,6 +132,7 @@ int pool_destroy(pool_info * pool){
 
 	for(pool_block * pb = pool->first; pb != NULL; ){
 		pool_block * next = pb->next;
+		free(pb->pool);
 		free(pb);
 		pb = next;
 	}
